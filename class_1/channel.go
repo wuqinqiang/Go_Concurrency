@@ -7,10 +7,10 @@ import (
 
 func main() {
 	// 发送 count++ 信号channel
-	ch := make(chan struct{})
+	ch := make(chan struct{},1)
 
 	// 计数完毕通知的chan
-	closeCh := make(chan struct{})
+	closeCh := make(chan struct{},100)
 
 	var count = 0
 
