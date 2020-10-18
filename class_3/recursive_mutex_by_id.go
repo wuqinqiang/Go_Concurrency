@@ -11,6 +11,19 @@ import (
 	"github.com/petermattis/goid"
 )
 
+// 简单获取gid
+func GoID() int {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	// 得到id字符串
+	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+	id, err := strconv.Atoi(idField)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+	}
+	return id
+}
+
 type RecursiveMutex struct {
 	sync.Mutex
 	owner     int64
@@ -19,6 +32,7 @@ type RecursiveMutex struct {
 
 func (m *RecursiveMutex) Lock() {
 	gid := goid.Get()
+//	gid:=GoID()
 	if atomic.LoadInt64(&m.owner) == gid {
 		m.recursion++
 		return
@@ -32,6 +46,7 @@ func (m *RecursiveMutex) Lock() {
 
 func (m *RecursiveMutex) Unlock() {
 	gid := goid.Get()
+	//	gid:=GoID()
 
 	if atomic.LoadInt64(&m.owner) != gid {
 		panic(fmt.Sprintf("wrong the owner (%d):%d!", m.owner, gid))
@@ -65,14 +80,14 @@ func main() {
 
 func StartLayer(r *RecursiveMutex) {
 	r.Lock()
-	fmt.Println("锁住了")
+	fmt.Println("开始")
 	TwoLayer(r)
 	r.Unlock()
 }
 
 func TwoLayer(r *RecursiveMutex) {
 	r.Lock()
-	fmt.Println("锁住了2")
+	fmt.Println("进入第二层")
 	ThreeLayer(r)
 	r.Unlock()
 }
