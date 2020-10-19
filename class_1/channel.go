@@ -6,41 +6,27 @@ import (
 )
 
 func main() {
-	// 发送 count++ 信号channel
-	ch := make(chan struct{},1)
+	ch := make(chan struct{}) // 发送和接收count++"信号"的通道
 
-	// 计数完毕通知的chan
-	closeCh := make(chan struct{},100)
-
-	var count = 0
-
-	// 等待
-	var wg sync.WaitGroup
-
-	go func() {
-		// 接收者从ch通道中接收信号值，自增count
-		for _ = range ch {
-			count++
-		}
-		closeCh <- struct{}{}
-	}()
-
+	wg := sync.WaitGroup{}
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 100000; j++ {
-				// 发送着发送信号到通道告知通道接收者自增count
 				ch <- struct{}{}
 			}
 		}()
 	}
-	// 等待所有g运行结束
-	wg.Wait()
-	// 关闭发送通道
-	close(ch)
-	// count计数完毕
-	<-closeCh
-	close(closeCh)
+
+	go func() {
+		wg.Wait() // 等待上面所有的 goroutine 运行完成
+		close(ch) // 关闭ch通道
+	}()
+
+	count := 0
+	for range ch { // 如果ch通道读取完了(ch是关闭状态), 则for循环结束
+		count++
+	}
 	fmt.Println("count的值是:", count)
 }
