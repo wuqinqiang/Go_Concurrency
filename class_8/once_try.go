@@ -28,7 +28,7 @@ func (o *Once) doSlow(fn func() error) error {
 	var err error
 	if o.done == 0 {
 		err = fn()
-		if err == nil {
+		if err == nil { // 只有初始化成功才打标注
 			atomic.StoreUint32(&o.done, 1)
 		}
 	}
@@ -44,10 +44,11 @@ func main() {
 	}
 	var conn net.Conn
 	var o Once
-	count := 1
+	count := 0
 	var err error
 	for _, url := range urls {
 		err := o.Do(func() error {
+			count++
 			fmt.Printf("初始化%d次\n", count)
 			conn, err = net.DialTimeout("tcp", url, time.Second)
 			fmt.Println(err)
@@ -56,7 +57,6 @@ func main() {
 		if err == nil {
 			break
 		}
-		count++
 		if count == 3 {
 			fmt.Println("初始化失败，不再重试")
 			break
